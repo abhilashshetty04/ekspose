@@ -7,6 +7,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	ntw "k8s.io/api/networking/v1"
+	apierror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
@@ -39,6 +40,16 @@ func newController(clientset kubernetes.Interface, depInformer appsinformers.Dep
 	return c
 }
 
+func (c *controller) handleAdd(obj interface{}) {
+	fmt.Println("Add was called")
+	c.queue.Add(obj)
+}
+
+func (c *controller) handleDel(obj interface{}) {
+	fmt.Println("Del was called")
+	c.queue.Add(obj)
+}
+
 func (c *controller) run(ch <-chan struct{}) {
 	fmt.Println("starting controller")
 	if !cache.WaitForCacheSync(ch, c.depCacheSynced) {
@@ -51,9 +62,7 @@ func (c *controller) run(ch <-chan struct{}) {
 
 func (c *controller) worker() {
 	for c.processItems() {
-
 	}
-
 }
 
 func (c *controller) processItems() bool {
@@ -72,6 +81,26 @@ func (c *controller) processItems() bool {
 		return false
 	}
 
+	//Check if object was Added or deleted
+	ctx := context.Background()
+	_, err = c.clientset.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+	if apierror.IsNotFound(err) {
+		fmt.Printf("Handle del event for %s in %s\n", name, ns)
+		err := c.clientset.CoreV1().Services(ns).Delete(ctx, name, metav1.DeleteOptions{})
+		if err != nil {
+			fmt.Printf("Couldnt delete service %s, error is %s\n", name, err)
+			return false
+		}
+		fmt.Printf("deleted service %s from %s\n", name, ns)
+		err = c.clientset.NetworkingV1().Ingresses(ns).Delete(ctx, name, metav1.DeleteOptions{})
+		if err != nil {
+			fmt.Printf("Couldnt delete ingress %s, error is %s\n", name, err)
+			return false
+		}
+		fmt.Printf("deleted ingress %s from %s\n", name, ns)
+		return true
+	}
+	fmt.Printf("Handle Add event for %s in %s\n", name, ns)
 	err = c.syncDeployment(ns, name)
 	if err != nil {
 		fmt.Printf("Syncing deployment failed %s\n", err.Error())
@@ -93,7 +122,7 @@ func (c *controller) syncDeployment(ns, name string) error {
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dep.Name,
-			Namespace: ns,
+			Namespace: dep.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: dep.Spec.Template.Labels,
@@ -111,6 +140,7 @@ func (c *controller) syncDeployment(ns, name string) error {
 		return err
 
 	}
+	fmt.Printf("Created service %s in %s ns\n", service.Name, service.Namespace)
 	//create ingress
 	ingerror := createIngress(ctx, c.clientset, service)
 	if ingerror != nil {
@@ -152,23 +182,10 @@ func createIngress(ctx context.Context, client kubernetes.Interface, svc *corev1
 			},
 		},
 	}
-	_, err := client.NetworkingV1().Ingresses(svc.Namespace).Create(ctx, &ingress, metav1.CreateOptions{})
+	ing, err := client.NetworkingV1().Ingresses(svc.Namespace).Create(ctx, &ingress, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Created ingress %s in %s ns\n", ing.Name, ing.Namespace)
 	return nil
-}
-
-/*func depLabel(dep appsv1.Deployment) map[string]string {
-	return dep.Spec.Template.Labels
-}*/
-
-func (c *controller) handleAdd(obj interface{}) {
-	fmt.Println("Add was called")
-	c.queue.Add(obj)
-}
-
-func (c *controller) handleDel(obj interface{}) {
-	fmt.Println("Del was called")
-	c.queue.Add(obj)
 }

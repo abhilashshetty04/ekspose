@@ -27,6 +27,13 @@ func main() {
 	informerfactory := informers.NewSharedInformerFactory(clientset, 30*time.Second)
 	depInfomer := informerfactory.Apps().V1().Deployments()
 	c := newController(clientset, depInfomer)
+	ingInformer := informerfactory.Networking().V1().Ingresses()
+	ingc := newIngController(clientset, ingInformer)
+	svcInformer := informerfactory.Core().V1().Services()
+	svcc := newSvcController(clientset, svcInformer)
 	informerfactory.Start(ch)
-	c.run(ch)
+	go c.run(ch)
+	go svcc.run(ch)
+	ingc.run(ch)
+
 }
