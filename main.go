@@ -19,7 +19,7 @@ func main() {
 		fmt.Printf("Error %s building config from flag\n", err.Error())
 		config, err = rest.InClusterConfig()
 		if err != nil {
-			fmt.Printf("Error in getting incluster config", err.Error())
+			fmt.Printf("Error in getting incluster config %s", err.Error())
 		}
 	}
 	clientset, err := kubernetes.NewForConfig(config)

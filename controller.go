@@ -119,6 +119,17 @@ func (c *controller) syncDeployment(ns, name string) error {
 		return err
 	}
 
+	/*if dep.Name == "nginxd" {
+		fmt.Println(dep.Name)
+		var ingReq string
+		for key, val := range dep.ObjectMeta.Labels {
+			if key == "ingReq" {
+				ingReq = val
+			}
+		}
+		fmt.Printf("Ingress resource for the deployment object is: %s\n", ingReq)
+	}*/
+
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dep.Name,
@@ -134,17 +145,32 @@ func (c *controller) syncDeployment(ns, name string) error {
 			},
 		},
 	}
-	service, err := c.clientset.CoreV1().Services(ns).Create(ctx, &svc, metav1.CreateOptions{})
-	if err != nil {
-		fmt.Printf("Service creation failed %s\n", err.Error())
-		return err
 
+	service, err := c.clientset.CoreV1().Services(ns).Create(ctx, &svc, metav1.CreateOptions{})
+	if apierror.IsAlreadyExists(err) {
+		fmt.Printf("Service %s already exists\n", dep.Name)
+		return nil
+	}
+	if err != nil {
+		fmt.Printf("Service creation failed: %s\n", err.Error())
+		return err
 	}
 	fmt.Printf("Created service %s in %s ns\n", service.Name, service.Namespace)
-	//create ingress
-	ingerror := createIngress(ctx, c.clientset, service)
-	if ingerror != nil {
-		return ingerror
+
+	ingReq := "notNeeded"
+	for key, val := range dep.ObjectMeta.Labels {
+		if key == "ingReq" {
+			ingReq = val
+		}
+	}
+	fmt.Printf("Ingress resource for the deployment object is: %s\n", ingReq)
+	if ingReq == "needed" {
+		//create ingress
+		ingerror := createIngress(ctx, c.clientset, service)
+		if ingerror != nil {
+			return ingerror
+		}
+		return nil
 	}
 	return nil
 }
@@ -183,7 +209,12 @@ func createIngress(ctx context.Context, client kubernetes.Interface, svc *corev1
 		},
 	}
 	ing, err := client.NetworkingV1().Ingresses(svc.Namespace).Create(ctx, &ingress, metav1.CreateOptions{})
+	if apierror.IsAlreadyExists(err) {
+		fmt.Printf("Ingress %s already exists\n", ing.Name)
+		return nil
+	}
 	if err != nil {
+		fmt.Printf("Ingress creation failed: %s\n", err.Error())
 		return err
 	}
 	fmt.Printf("Created ingress %s in %s ns\n", ing.Name, ing.Namespace)
