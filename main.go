@@ -8,6 +8,7 @@ import (
 
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -16,6 +17,10 @@ func main() {
 	config, err := clientcmd.BuildConfigFromFlags("", *kube_config)
 	if err != nil {
 		fmt.Printf("Error %s building config from flag\n", err.Error())
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			fmt.Printf("Error in getting incluster config", err.Error())
+		}
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
