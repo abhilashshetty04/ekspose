@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -119,6 +120,17 @@ func (c *controller) syncDeployment(ns, name string) error {
 		return err
 	}
 
+	port := "80"
+	if err != nil {
+		fmt.Printf("Getting deployment obj failed %s\n", err.Error())
+		return err
+	}
+	for key, val := range dep.ObjectMeta.Labels {
+		if key == "port" {
+			port = val
+		}
+	}
+	portInt, _ := strconv.Atoi(port)
 	/*if dep.Name == "nginxd" {
 		fmt.Println(dep.Name)
 		var ingReq string
@@ -140,7 +152,7 @@ func (c *controller) syncDeployment(ns, name string) error {
 			Ports: []corev1.ServicePort{
 				{
 					Name: "http",
-					Port: 80,
+					Port: int32(portInt),
 				},
 			},
 		},
@@ -176,6 +188,22 @@ func (c *controller) syncDeployment(ns, name string) error {
 }
 
 func createIngress(ctx context.Context, client kubernetes.Interface, svc *corev1.Service) error {
+	path := "/api/v1/books"
+	port := "80"
+	dep, err := client.AppsV1().Deployments(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Getting deployment obj failed %s\n", err.Error())
+		return err
+	}
+	for key, val := range dep.ObjectMeta.Labels {
+		/*if key == "path" {
+			path = val
+		}*/
+		if key == "port" {
+			port = val
+		}
+	}
+	portInt, _ := strconv.Atoi(port)
 	pathtype := ntw.PathTypeExact
 	ingress := ntw.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -190,13 +218,13 @@ func createIngress(ctx context.Context, client kubernetes.Interface, svc *corev1
 						HTTP: &ntw.HTTPIngressRuleValue{
 							Paths: []ntw.HTTPIngressPath{
 								ntw.HTTPIngressPath{
-									Path:     "/",
+									Path:     path,
 									PathType: &pathtype,
 									Backend: ntw.IngressBackend{
 										Service: &ntw.IngressServiceBackend{
 											Name: svc.Name,
 											Port: ntw.ServiceBackendPort{
-												Number: 80,
+												Number: int32(portInt),
 											},
 										},
 									},

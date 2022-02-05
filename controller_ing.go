@@ -81,6 +81,13 @@ func (ingc *ingCtrller) processItems() bool {
 		return true
 	}
 
+	/*required to get path for ingress resouce
+	deployment, err := ingc.clientset.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+	if apierror.IsNotFound(err) {
+		fmt.Printf("Deployment not found for the deleted ingress : %s. Failed obj reconcilation\n", name)
+		return false
+	}*/
+
 	fmt.Printf("Service found for the deleted ingress object : %s. Hence continuing object reconcilation\n", name)
 	ingerror := createIngress(ctx, ingc.clientset, service)
 	if ingerror != nil {
