@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -82,6 +83,14 @@ func (svcc *svcCtrller) processItems() bool {
 	}
 	fmt.Printf("Deployment found for the deleted service object : %s. Hence continuing object reconcilation\n", name)
 
+	port := "80"
+	for key, val := range dep.ObjectMeta.Labels {
+		if key == "port" {
+			port = val
+		}
+	}
+	portInt, _ := strconv.Atoi(port)
+
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dep.Name,
@@ -92,7 +101,7 @@ func (svcc *svcCtrller) processItems() bool {
 			Ports: []corev1.ServicePort{
 				{
 					Name: "http",
-					Port: 80,
+					Port: int32(portInt),
 				},
 			},
 		},
