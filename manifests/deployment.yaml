@@ -19,7 +19,7 @@ spec:
         app: ekspose
     spec:
       containers:
-      - image: abhilashshetty04/ekspose:0.1.3
+      - image: abhilashshetty04/ekspose:0.1.4
         name: ekspose
         resources: {}
       serviceAccountName: ekspose-sa

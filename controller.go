@@ -188,7 +188,7 @@ func (c *controller) syncDeployment(ns, name string) error {
 }
 
 func createIngress(ctx context.Context, client kubernetes.Interface, svc *corev1.Service) error {
-	path := "/api/v1/books"
+	path := "/"
 	port := "80"
 	dep, err := client.AppsV1().Deployments(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
 	if err != nil {
@@ -202,6 +202,9 @@ func createIngress(ctx context.Context, client kubernetes.Interface, svc *corev1
 		if key == "port" {
 			port = val
 		}
+	}
+	if port == "8080" {
+		path = "/api/v1/books"
 	}
 	portInt, _ := strconv.Atoi(port)
 	pathtype := ntw.PathTypeExact
