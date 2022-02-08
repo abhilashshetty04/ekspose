@@ -87,9 +87,9 @@ There is a sample deploy file:
 
 https://github.com/abhilashshetty04/ekspose/blob/main/manifests/deploy.yaml
 
-If you want to test the application access. It is required that connection is comes to the ingress controllers. In public cloud Loadbalance will be there which would forward the traffic to controllers. In on prem kubeadm cluster a loadbalancer will be required.
+If you want to test the application access. It is required that connection comes to the ingress controllers. In public cloud Loadbalancerwill be there which would forward the traffic to controllers. In on prem kubeadm cluster loadbalancer needs to be installed.
 
-I had used HAProxy for reverse proxy with following config. Note that http backend server are kube worker nodes where ingress controllers run. So When any  connection comes to HAProxy on port 80 it is forwarded to worker nodes whose port 80 is mapped and forwarded to ing controllers.
+I used HAProxy for reverse proxy with following config. Note that http backend server are kube worker nodes where ingress controllers run. So When any  connection comes to HAProxy on port 80 it is forwarded to worker nodes whose port 80 is mapped and forwarded to ing controllers.
 
 In HAProxy config: vim /etc/haproxy/haproxy.cfg
 frontend http_front
