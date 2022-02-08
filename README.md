@@ -1,6 +1,6 @@
 Ekspose - A custom controller that makes a deployment accessible from outside. Reconciles any unforseen object deletion as well. Thereby, making sure application is always accessible.
 
-This project implements 3 controllers sharing an informer. We are subscribing for Deployment, Service and ingress resource events using saperate controllers for each object. All controllers list and watch their respective resources across namespace.
+This project implements 3 controllers sharing an informer. Theres a controller watching Deployment, Service and ingress resource events across namespace. Controller pod runs in ekspose ns
 
 Each controller use specific verbs for the objects they are are resposible for. Hence service account mounted on pod should have necessary RBAC permissions:
 
