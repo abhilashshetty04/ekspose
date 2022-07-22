@@ -8,7 +8,7 @@ Deployment obj: List, watch
 Service obj: List, Watch, Add, Del
 Ingress obj: List, Watch, Add, Del
 
-We would need to create service account which can be used used deloyment manifest. Along with cluster role as we need to watch accross ns. and cluster role binding object to bind role with service account.
+We would need to create service account which can be used in deloyment manifest of the controller. Along with cluster role as we must watch accross ns and cluster role binding object to bind role with service account.
  
 Please find all these manifest along with controller deployment manifest in 
 
