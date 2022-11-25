@@ -1,7 +1,7 @@
+Ekspose - A custom controller that makes a deployment accessible from outside. Reconciles any unforseen object deletion as well. Thereby, making sure application is always accessible.
+
 Initial design reference:
 https://www.youtube.com/watch?v=lzoWSfvE2yA&list=PLh4KH3LtJvRQ43JAwwjvTnsVOMp0WKnJO
-
-Ekspose - A custom controller that makes a deployment accessible from outside. Reconciles any unforseen object deletion as well. Thereby, making sure application is always accessible.
 
 This project implements 3 controllers sharing an informer. Theres a controller watching Deployment, Service and ingress resource events across namespace. Controller pod runs in ekspose ns
 
